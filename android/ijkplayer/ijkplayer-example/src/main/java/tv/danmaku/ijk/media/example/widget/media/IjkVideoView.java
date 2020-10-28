@@ -150,6 +150,13 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
         initVideoView(context);
     }
 
+    public int startRecord(String recordVideoPath) {
+        return mMediaPlayer.startRecord(recordVideoPath);
+    }
+
+    public int stopRecord() {
+        return mMediaPlayer.stopRecord();
+    }
     // REMOVED: onMeasure
     // REMOVED: onInitializeAccessibilityEvent
     // REMOVED: onInitializeAccessibilityNodeInfo
