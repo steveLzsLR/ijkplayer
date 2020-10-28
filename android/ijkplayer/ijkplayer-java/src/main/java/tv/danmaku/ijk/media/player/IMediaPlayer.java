@@ -120,7 +120,8 @@ public interface IMediaPlayer {
     int getAudioSessionId();
 
     MediaInfo getMediaInfo();
-
+    int startRecord(String recordVideoPath)throws IllegalStateException;;
+    int stopRecord()throws IllegalStateException;
     @SuppressWarnings("EmptyMethod")
     @Deprecated
     void setLogEnabled(boolean enable);

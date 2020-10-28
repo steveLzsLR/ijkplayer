@@ -634,6 +634,8 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         }
     }
 
+
+
     @SuppressLint("Wakelock")
     private void stayAwake(boolean awake) {
         if (mWakeLock != null) {
@@ -971,6 +973,12 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         }
         return mediaInfo;
     }
+
+    @Override
+    public native int startRecord(String recordVideoPath)throws IllegalStateException;
+
+    @Override
+    public native int stopRecord()throws IllegalStateException;
 
     @Override
     public void setLogEnabled(boolean enable) {
