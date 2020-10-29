@@ -5253,7 +5253,7 @@ int ffp_start_record(FFPlayer *ffp, const char *file_name)
             out_stream->codecpar->sample_rate = 44100;
         int ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
         if (ret < 0) {
-           av_log(NULL, AV_LOG_ERROR, "Failed to copy context from input to output stream codec context, error:%1", ret);
+           av_log(NULL, AV_LOG_ERROR, "Failed to copy context from input to output stream codec context, error:%d", ret);
            goto end;
         }
         if (ffp->m_ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
@@ -5351,7 +5351,7 @@ int ffp_record_file(FFPlayer *ffp, AVPacket *packet)
             av_log(ffp, AV_LOG_INFO, "ffp->start_pts:%"PRId64"",ffp->start_pts);
             av_log(ffp, AV_LOG_INFO, "ffp->start_dts:%"PRId64"",ffp->start_dts);
 
-            av_log(ffp, AV_LOG_INFO, "ffp->is_first:%"PRId64"",ffp->is_first);
+            av_log(ffp, AV_LOG_INFO, "ffp->is_first:%d",ffp->is_first);
             if (!ffp->is_first) { // 录制的第一帧，时间从0开始
                 if(pkt->flags==AV_PKT_FLAG_KEY){
                     //取到I帧开始写录制数据
