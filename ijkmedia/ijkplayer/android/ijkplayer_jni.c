@@ -418,34 +418,39 @@ IjkMediaPlayer_reset(JNIEnv *env, jobject thiz)
 
     ijkmp_dec_ref_p(&mp);
 }
+
 //开始录屏
 static jint
-IjkMediaPlayer_startRecord(JNIEnv *env, jclass thiz,jstring file)
+IjkMediaPlayer_startRecord(JNIEnv *env, jobject thiz,jstring file)
 {
     jint retval = 0;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
-    JNI_CHECK_GOTO(mp, env,  "java/lang/IllegalStateException","mpjni: startRecord: null mp", LABEL_RETURN);
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: startRecord: null mp", LABEL_RETURN);
     const char *nativeString = (*env)->GetStringUTFChars(env, file, 0);
     retval = ijkmp_start_record(mp,nativeString);
 
-LABEL_RETURN:
+    LABEL_RETURN:
     ijkmp_dec_ref_p(&mp);
+    retval=1;
     return retval;
 }
+
 //结束录屏
 static jint
-IjkMediaPlayer_stopRecord(JNIEnv *env, jclass thiz)
+IjkMediaPlayer_stopRecord(JNIEnv *env, jobject thiz)
 {
     jint retval = 0;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
-    JNI_CHECK_GOTO(mp, env, "java/lang/IllegalStateException", "mpjni: stopRecord: null mp", LABEL_RETURN);
+    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: stopRecord: null mp", LABEL_RETURN);
 
     retval = ijkmp_stop_record(mp);
 
-LABEL_RETURN:
+    LABEL_RETURN:
     ijkmp_dec_ref_p(&mp);
+    retval=1;
     return retval;
 }
+
 
 static void
 IjkMediaPlayer_setLoopCount(JNIEnv *env, jobject thiz, jint loop_count)
