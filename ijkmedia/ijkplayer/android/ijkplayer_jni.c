@@ -424,7 +424,7 @@ IjkMediaPlayer_startRecord(JNIEnv *env, jclass thiz,jstring file)
 {
     jint retval = 0;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
-    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: startRecord: null mp", LABEL_RETURN);
+    JNI_CHECK_GOTO(mp, env,  "java/lang/IllegalStateException","mpjni: startRecord: null mp", LABEL_RETURN);
     const char *nativeString = (*env)->GetStringUTFChars(env, file, 0);
     retval = ijkmp_start_record(mp,nativeString);
 
@@ -438,7 +438,7 @@ IjkMediaPlayer_stopRecord(JNIEnv *env, jclass thiz)
 {
     jint retval = 0;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
-    JNI_CHECK_GOTO(mp, env, NULL, "mpjni: stopRecord: null mp", LABEL_RETURN);
+    JNI_CHECK_GOTO(mp, env, "java/lang/IllegalStateException", "mpjni: stopRecord: null mp", LABEL_RETURN);
 
     retval = ijkmp_stop_record(mp);
 
@@ -1277,8 +1277,8 @@ static JNINativeMethod g_methods[] = {
 
     { "native_setLogLevel",     "(I)V",                     (void *) IjkMediaPlayer_native_setLogLevel },
     { "_setFrameAtTime",        "(Ljava/lang/String;JJII)V", (void *) IjkMediaPlayer_setFrameAtTime },
-    { "startRecord",            "(Ljava/lang/String;)I",      (void *) IjkMediaPlayer_startRecord },
-    { "stopRecord",             "()V",      (void *) IjkMediaPlayer_stopRecord },
+    { "_startRecord",            "(Ljava/lang/String;)I",      (void *) IjkMediaPlayer_startRecord },
+    { "_stopRecord",             "()I",      (void *) IjkMediaPlayer_stopRecord },
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)

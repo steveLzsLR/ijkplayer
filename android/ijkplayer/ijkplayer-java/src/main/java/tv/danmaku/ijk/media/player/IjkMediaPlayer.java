@@ -973,12 +973,15 @@ public final class IjkMediaPlayer extends AbstractMediaPlayer {
         }
         return mediaInfo;
     }
+    public int startRecord(String recordVideoPath)throws IllegalStateException{
+        return _startRecord(recordVideoPath);
+    }
+    public int stopRecord()throws IllegalStateException{
+        return _stopRecord();
+    }
+    private native int _startRecord(String recordVideoPath)throws IllegalStateException;
 
-    @Override
-    public native int startRecord(String recordVideoPath)throws IllegalStateException;
-
-    @Override
-    public native int stopRecord()throws IllegalStateException;
+    private native int _stopRecord()throws IllegalStateException;
 
     @Override
     public void setLogEnabled(boolean enable) {

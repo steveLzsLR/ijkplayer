@@ -358,9 +358,4 @@ public class MediaPlayerProxy implements IMediaPlayer {
         return mBackEndMediaPlayer.isLooping();
     }
 
-    @Override
-    public native int startRecord(String recordVideoPath)throws IllegalStateException;
-
-    @Override
-    public native int stopRecord()throws IllegalStateException;
 }
