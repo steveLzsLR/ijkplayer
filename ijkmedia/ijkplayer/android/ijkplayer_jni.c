@@ -431,7 +431,6 @@ IjkMediaPlayer_startRecord(JNIEnv *env, jobject thiz,jstring file)
 
     LABEL_RETURN:
     ijkmp_dec_ref_p(&mp);
-    retval=1;
     return retval;
 }
 
@@ -447,7 +446,6 @@ IjkMediaPlayer_stopRecord(JNIEnv *env, jobject thiz)
 
     LABEL_RETURN:
     ijkmp_dec_ref_p(&mp);
-    retval=1;
     return retval;
 }
 

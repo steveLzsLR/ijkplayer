@@ -851,7 +851,15 @@ int ijkmp_start_record(IjkMediaPlayer *mp,const char *file_name)
     printf("=====开始录制准备=====");
     MPTRACE("ijkmp_startRecord()\n");
     pthread_mutex_lock(&mp->mutex);
-    int retval = ffp_start_record(mp->ffplayer,file_name);
+    int retval = 1;
+    if(mp->ffplayer->is_record){
+      //如果正在录制，先停止再开始
+      ijkmp_stop_record(mp);
+      retval= ffp_start_record(mp->ffplayer,file_name);
+    }else{
+        retval= ffp_start_record(mp->ffplayer,file_name);
+    }
+
     printf("=====开始录制已调用=====\n");
     pthread_mutex_unlock(&mp->mutex);
     MPTRACE("ijkmp_startRecord()=%d\n", retval);
