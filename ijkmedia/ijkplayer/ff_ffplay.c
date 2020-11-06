@@ -5343,7 +5343,7 @@ int ffp_record_file(FFPlayer *ffp, AVPacket *packet)
             return -1;
         }
 
-        AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket)); // 与看直播的 AVPacket分开，不然卡屏
+        AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket)+1); // 与看直播的 AVPacket分开，不然卡屏
         av_new_packet(pkt, 0);
         if (0 == av_packet_ref(pkt, packet)) {
             
