@@ -425,11 +425,15 @@ IjkMediaPlayer_startRecord(JNIEnv *env, jobject thiz,jstring file)
 {
     jint retval = 0;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+    printf("########################");
+    printf("%p",mp);
     JNI_CHECK_GOTO(mp, env, NULL, "mpjni: startRecord: null mp", LABEL_RETURN);
     const char *nativeString = (*env)->GetStringUTFChars(env, file, 0);
     retval = ijkmp_start_record(mp,nativeString);
 
     LABEL_RETURN:
+    printf("########################");
+    printf("LABEL_RETURN");
     ijkmp_dec_ref_p(&mp);
     return retval;
 }

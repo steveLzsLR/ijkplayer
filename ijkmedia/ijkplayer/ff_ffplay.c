@@ -5307,6 +5307,7 @@ int ffp_stop_record(FFPlayer *ffp)
             av_log(NULL, AV_LOG_INFO, "===== 写文件尾部返回：%d =====\n",errorCode);
             if (ffp->m_ofmt_ctx && !(ffp->m_ofmt->flags & AVFMT_NOFILE)) {
                 av_log(NULL, AV_LOG_INFO, "===== 开始关闭文件 =====\n");
+                avio_closep(&ffp->m_ofmt_ctx->pb);
                 avio_close(ffp->m_ofmt_ctx->pb);
             }
             avformat_free_context(ffp->m_ofmt_ctx);
@@ -5343,69 +5344,72 @@ int ffp_record_file(FFPlayer *ffp, AVPacket *packet)
             return -1;
         }
 
-        AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket)+1); // 与看直播的 AVPacket分开，不然卡屏
+        AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket)); // 与看直播的 AVPacket分开，不然卡屏
         av_new_packet(pkt, 0);
-        if (0 == av_packet_ref(pkt, packet)) {
-            
+//        av_packet_alloc();
+//        av_packet_from_data(pkt,packet->data,packet->size);
+        if(packet!=NULL && packet->size>0 && packet->data!=NULL){
+            if (0 == av_packet_ref(pkt, packet)) {
+                av_log(ffp, AV_LOG_INFO, "ffp->start_pts:%"PRId64"",ffp->start_pts);
+                av_log(ffp, AV_LOG_INFO, "ffp->start_dts:%"PRId64"",ffp->start_dts);
 
-            av_log(ffp, AV_LOG_INFO, "ffp->start_pts:%"PRId64"",ffp->start_pts);
-            av_log(ffp, AV_LOG_INFO, "ffp->start_dts:%"PRId64"",ffp->start_dts);
+                av_log(ffp, AV_LOG_INFO, "ffp->is_first:%d",ffp->is_first);
+                if (!ffp->is_first) { // 录制的第一帧，时间从0开始
+                    if(pkt->flags==AV_PKT_FLAG_KEY){
+                        //取到I帧开始写录制数据
+                        ffp->is_first = 1;
+                        ffp->start_pts = pkt->pts;
+                        ffp->start_dts = pkt->dts;
+                        pkt->pts = 0;
+                        pkt->dts = 0;
+                    }else{
+                        ffp->is_first = 0;
+                        ffp->start_pts = pkt->pts;
+                        ffp->start_dts = pkt->dts;
+                        pkt->pts = 0;
+                        pkt->dts = 0;
+                        av_packet_unref(pkt);
+                        pthread_mutex_unlock(&ffp->record_mutex);
+                        return 0;
+                    }
 
-            av_log(ffp, AV_LOG_INFO, "ffp->is_first:%d",ffp->is_first);
-            if (!ffp->is_first) { // 录制的第一帧，时间从0开始
-                if(pkt->flags==AV_PKT_FLAG_KEY){
-                    //取到I帧开始写录制数据
-                    ffp->is_first = 1;
-                    ffp->start_pts = pkt->pts;
-                    ffp->start_dts = pkt->dts;
-                    pkt->pts = 0;
-                    pkt->dts = 0;
-                }else{
-                    ffp->is_first = 0;
-                    ffp->start_pts = pkt->pts;
-                    ffp->start_dts = pkt->dts;
-                    pkt->pts = 0;
-                    pkt->dts = 0;
-                    av_packet_unref(pkt);
-                    pthread_mutex_unlock(&ffp->record_mutex);
-                    return 0;
+                } else { // 之后的每一帧都要减去，点击开始录制时的值，这样的时间才是正确的
+                    pkt->pts = llabs(pkt->pts - ffp->start_pts);
+                    pkt->dts = llabs(pkt->dts - ffp->start_dts);
                 }
-                
-            } else { // 之后的每一帧都要减去，点击开始录制时的值，这样的时间才是正确的
-                pkt->pts = llabs(pkt->pts - ffp->start_pts);
-                pkt->dts = llabs(pkt->dts - ffp->start_dts);
+
+                if(pkt->pts<pkt->dts)
+                    pkt->dts = pkt->pts;
+                if(pkt->dts<pkt->pts)
+                    pkt->pts = pkt->dts;
+                in_stream  = is->ic->streams[pkt->stream_index];
+                out_stream = ffp->m_ofmt_ctx->streams[pkt->stream_index];
+
+                // 转换PTS/DTS
+                pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                pkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
+                pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base, out_stream->time_base);
+
+                pkt->pos = -1;
+
+
+                av_log(ffp, AV_LOG_INFO, "inner pkt->pts:%"PRId64"\n",pkt->pts);
+                av_log(ffp, AV_LOG_INFO, "inner pkt->dts:%"PRId64"\n",pkt->dts);
+                av_log(ffp, AV_LOG_INFO, "inner pkt->duration:%"PRId64"\n",pkt->duration);
+
+
+                av_log(ffp, AV_LOG_INFO, "av_interleaved_write_frame\n");
+                // 写入一个AVPacket到输出文件
+                if ((ret = av_interleaved_write_frame(ffp->m_ofmt_ctx, pkt)) < 0) {
+                    av_log(ffp, AV_LOG_ERROR, "Error muxing packet\n");
+                }
+                av_packet_unref(pkt);
+                pthread_mutex_unlock(&ffp->record_mutex);
+            } else {
+                av_log(ffp, AV_LOG_ERROR, "av_packet_ref == NULL");
             }
-            
-            if(pkt->pts<pkt->dts)
-              pkt->dts = pkt->pts;
-            if(pkt->dts<pkt->pts)
-              pkt->pts = pkt->dts;
-            in_stream  = is->ic->streams[pkt->stream_index];
-            out_stream = ffp->m_ofmt_ctx->streams[pkt->stream_index];
-
-            // 转换PTS/DTS
-            pkt->pts = av_rescale_q_rnd(pkt->pts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-            pkt->dts = av_rescale_q_rnd(pkt->dts, in_stream->time_base, out_stream->time_base, (AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
-            pkt->duration = av_rescale_q(pkt->duration, in_stream->time_base, out_stream->time_base);
-
-            pkt->pos = -1;
-
-
-            av_log(ffp, AV_LOG_INFO, "inner pkt->pts:%"PRId64"\n",pkt->pts);
-            av_log(ffp, AV_LOG_INFO, "inner pkt->dts:%"PRId64"\n",pkt->dts);
-            av_log(ffp, AV_LOG_INFO, "inner pkt->duration:%"PRId64"\n",pkt->duration);
-
-
-            av_log(ffp, AV_LOG_INFO, "av_interleaved_write_frame\n");
-            // 写入一个AVPacket到输出文件
-            if ((ret = av_interleaved_write_frame(ffp->m_ofmt_ctx, pkt)) < 0) {
-                av_log(ffp, AV_LOG_ERROR, "Error muxing packet\n");
-            }
-            av_packet_unref(pkt);
-            pthread_mutex_unlock(&ffp->record_mutex);
-        } else {
-            av_log(ffp, AV_LOG_ERROR, "av_packet_ref == NULL");
         }
+
     }
     pthread_mutex_unlock(&ffp->record_mutex);
     return ret;
