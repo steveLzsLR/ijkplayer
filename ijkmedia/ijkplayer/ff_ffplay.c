@@ -5342,6 +5342,16 @@ int ffp_record_file(FFPlayer *ffp, AVPacket *packet)
             pthread_mutex_unlock(&ffp->record_mutex);
             return -1;
         }
+		av_log(ffp, AV_LOG_INFO, "检验side_data");
+		for (int i = 0; i < packet->side_data_elems; i++) {
+         int size          = packet->side_data[i].size;
+         uint8_t *src_data = packet->side_data[i].data;
+			if ( src_data == NULL) {
+            av_log(ffp, AV_LOG_ERROR, "side_data 异常");
+            pthread_mutex_unlock(&ffp->record_mutex);
+            return 0;
+			}
+		}
 
         AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket)); // 与看直播的 AVPacket分开，不然卡屏
         av_new_packet(pkt, 0);
